@@ -34,11 +34,11 @@ class ReportController extends Controller
 
         if ($request->filled('poverty_level')) {
             $query->whereRaw('CASE 
-                WHEN poverty_score >= 20 THEN "Sangat Miskin"
-                WHEN poverty_score >= 15 THEN "Miskin" 
-                WHEN poverty_score >= 10 THEN "Rentan Miskin"
-                ELSE "Tidak Miskin" 
-                END = ?', [$request->poverty_level]);
+                    WHEN poverty_score >= 20 THEN "Sangat Miskin"
+                    WHEN poverty_score >= 15 THEN "Miskin" 
+                    WHEN poverty_score >= 10 THEN "Rentan Miskin"
+                    ELSE "Tidak Miskin" 
+                    END = ?', [$request->poverty_level]);
         }
 
         if ($request->filled('surveyor_id')) {
@@ -93,11 +93,11 @@ class ReportController extends Controller
 
         if ($request->filled('poverty_level')) {
             $query->whereRaw('CASE 
-                WHEN poverty_score >= 20 THEN "Sangat Miskin"
-                WHEN poverty_score >= 15 THEN "Miskin" 
-                WHEN poverty_score >= 10 THEN "Rentan Miskin"
-                ELSE "Tidak Miskin" 
-                END = ?', [$request->poverty_level]);
+                    WHEN poverty_score >= 20 THEN "Sangat Miskin"
+                    WHEN poverty_score >= 15 THEN "Miskin" 
+                    WHEN poverty_score >= 10 THEN "Rentan Miskin"
+                    ELSE "Tidak Miskin" 
+                    END = ?', [$request->poverty_level]);
         }
 
         if ($request->filled('surveyor_id')) {
@@ -144,11 +144,11 @@ class ReportController extends Controller
 
         if ($request->filled('poverty_level')) {
             $query->whereRaw('CASE 
-                WHEN poverty_score >= 20 THEN "Sangat Miskin"
-                WHEN poverty_score >= 15 THEN "Miskin" 
-                WHEN poverty_score >= 10 THEN "Rentan Miskin"
-                ELSE "Tidak Miskin" 
-                END = ?', [$request->poverty_level]);
+                    WHEN poverty_score >= 20 THEN "Sangat Miskin"
+                    WHEN poverty_score >= 15 THEN "Miskin" 
+                    WHEN poverty_score >= 10 THEN "Rentan Miskin"
+                    ELSE "Tidak Miskin" 
+                    END = ?', [$request->poverty_level]);
         }
 
         if ($request->filled('surveyor_id')) {
@@ -228,12 +228,12 @@ class ReportController extends Controller
         ];
 
         $pdf = Pdf::loadView('admin.reports.pdf', $data)
-                  ->setPaper('A4', 'landscape')
-                  ->setOptions([
-                      'defaultFont' => 'sans-serif',
-                      'isHtml5ParserEnabled' => true,
-                      'isRemoteEnabled' => true,
-                  ]);
+            ->setPaper('A4', 'landscape')
+            ->setOptions([
+                'defaultFont' => 'sans-serif',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
 
         return $pdf->download('laporan-kemiskinan-' . date('Y-m-d-H-i-s') . '.pdf');
     }
@@ -242,12 +242,12 @@ class ReportController extends Controller
     private function exportPDF($data)
     {
         $pdf = Pdf::loadView('admin.reports.pdf', $data)
-                  ->setPaper('a4', 'landscape')
-                  ->setOptions([
-                      'defaultFont' => 'sans-serif',
-                      'isHtml5ParserEnabled' => true,
-                      'isRemoteEnabled' => true,
-                  ]);
+            ->setPaper('a4', 'landscape')
+            ->setOptions([
+                'defaultFont' => 'sans-serif',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
 
         $filename = 'laporan_survei_kemiskinan_' . date('Y-m-d_H-i-s') . '.pdf';
 

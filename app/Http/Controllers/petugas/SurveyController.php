@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
+use App\Models\PublicFacility;
+use App\Models\MainRoad;
 
 class SurveyController extends Controller
 {
@@ -280,8 +282,6 @@ class SurveyController extends Controller
 
     public function show(PoorFamily $survey)
     {
-        // ✅ Gunakan Gate::authorize instead of $this->authorize
-        Gate::authorize('view', $survey);
 
         $survey->load(['neighborhood.village.district', 'surveyor', 'verifier', 'categories']);
 
@@ -484,18 +484,63 @@ class SurveyController extends Controller
     {
         $user = auth()->user();
 
+        // ✅ Ambil data survei dengan relasi lengkap
         $surveys = $user->surveys()
-            ->with('neighborhood.village')
+            ->with([
+                'neighborhood.village.district.regency.province',
+                'surveyor',
+                'verifier',
+                'categories'
+            ])
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
             ->get();
 
+        // ✅ Data wilayah kerja (jika masih diperlukan untuk display)
         $workAreaVillages = collect();
         if ($user->wilayah_kerja) {
             $workAreaVillages = Village::whereIn('id', $user->wilayah_kerja)
-                ->with('district')
+                ->with('district.regency.province')
                 ->get();
         }
 
-        return view('petugas.surveys.map', compact('surveys', 'workAreaVillages'));
+        // ✅ Tambahkan data fasilitas umum dan jalan utama untuk petugas
+        $publicFacilities = PublicFacility::with('village.district.regency.province')
+            ->whereHas('village', function ($query) use ($user) {
+                if ($user->wilayah_kerja) {
+                    $query->whereIn('id', $user->wilayah_kerja);
+                }
+            })
+            ->get();
+
+        $mainRoads = MainRoad::with('village.district.regency.province')
+            ->whereHas('village', function ($query) use ($user) {
+                if ($user->wilayah_kerja) {
+                    $query->whereIn('id', $user->wilayah_kerja);
+                }
+            })
+            ->get();
+
+        // ✅ Statistik untuk petugas
+        $statistics = [
+            'total_surveys' => $surveys->count(),
+            'draft_surveys' => $surveys->where('status_verifikasi', 'draft')->count(),
+            'submitted_surveys' => $surveys->where('status_verifikasi', 'submitted')->count(),
+            'verified_surveys' => $surveys->where('status_verifikasi', 'verified')->count(),
+            'rejected_surveys' => $surveys->where('status_verifikasi', 'rejected')->count(),
+            'sangat_miskin' => $surveys->where('poverty_level', 'Sangat Miskin')->count(),
+            'miskin' => $surveys->where('poverty_level', 'Miskin')->count(),
+            'rentan_miskin' => $surveys->where('poverty_level', 'Rentan Miskin')->count(),
+            'tidak_miskin' => $surveys->where('poverty_level', 'Tidak Miskin')->count(),
+        ];
+
+        return view('petugas.surveys.map', compact(
+            'surveys',
+            'workAreaVillages',
+            'publicFacilities',
+            'mainRoads',
+            'statistics'
+        ));
     }
 
     public function submitForVerification(PoorFamily $survey)

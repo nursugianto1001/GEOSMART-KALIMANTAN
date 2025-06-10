@@ -54,12 +54,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::patch('/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
 
     Route::get('/surveys', [AdminDashboardController::class, 'surveys'])->name('surveys.index');
-    Route::get('/surveys/{survey}', [AdminDashboardController::class, 'showSurvey'])->name('surveys.show');
+    Route::get('/surveys/{survey}/detail', [AdminDashboardController::class, 'showSurvey'])->name('surveys.show'); // ✅ Tambah /detail
     Route::post('/surveys/{survey}/verify', [AdminDashboardController::class, 'verifySurvey'])->name('surveys.verify');
     Route::post('/surveys/{survey}/reject', [AdminDashboardController::class, 'rejectSurvey'])->name('surveys.reject');
     Route::get('/maps', [AdminMapController::class, 'index'])->name('maps');
 
-    // Bulk actions for surveys
+    // Bulk actions
     Route::post('/surveys/bulk-verify', [AdminDashboardController::class, 'bulkVerify'])->name('surveys.bulk-verify');
     Route::post('/surveys/bulk-reject', [AdminDashboardController::class, 'bulkReject'])->name('surveys.bulk-reject');
 });

@@ -32,7 +32,7 @@ class SurveyKalimantanBaratSeeder extends Seeder
             return;
         }
         
-        // Ambil semua villages di Kalimantan Barat
+        // Ambil semua villages di Kalimantan Barat saja
         $villages = Village::whereHas('district.regency', function($query) use ($kalbar) {
             $query->where('province_id', $kalbar->id);
         })->get();
@@ -102,8 +102,8 @@ class SurveyKalimantanBaratSeeder extends Seeder
         $asetOptions = ['motor', 'mobil', 'hp', 'tv', 'kulkas', 'mesin_cuci'];
         $bantuanOptions = ['pkh', 'bpnt', 'blt', 'kip', 'kis'];
         
-        // Buat 200-300 survey untuk Kalimantan Barat
-        $totalSurveys = $faker->numberBetween(200, 300);
+        // Buat 150-200 survey untuk Kalimantan Barat saja
+        $totalSurveys = $faker->numberBetween(150, 200);
         
         for ($i = 1; $i <= $totalSurveys; $i++) {
             // Pilih village random dari Kalimantan Barat
@@ -127,8 +127,8 @@ class SurveyKalimantanBaratSeeder extends Seeder
             $jenisKelamin = $faker->randomElement(['L', 'P']);
             $jumlahAnggota = $faker->numberBetween(1, 8);
             
-            // Generate koordinat yang realistis untuk Kalimantan Barat
-            $coordinates = $this->generateKalimantanBaratCoordinates($faker);
+            // ✅ PERBAIKAN: Generate koordinat yang akurat untuk Kalimantan Barat
+            $coordinates = $this->generateKalimantanBaratCoordinates($village, $faker);
             
             // Generate penghasilan berdasarkan kondisi ekonomi Kalimantan Barat
             $penghasilan = $this->generatePenghasilanKalbar($faker);
@@ -175,7 +175,7 @@ class SurveyKalimantanBaratSeeder extends Seeder
                 'updated_at' => $faker->dateTimeBetween('-1 month', 'now'),
             ]);
             
-            if ($i % 50 == 0) {
+            if ($i % 25 == 0) {
                 $this->command->info("Created {$i} surveys...");
             }
         }
@@ -183,31 +183,63 @@ class SurveyKalimantanBaratSeeder extends Seeder
     
     private function generateNamaKalimantanBarat($faker)
     {
+        // Nama-nama yang umum di Kalimantan Barat
         $namaDepan = [
             'Ahmad', 'Budi', 'Siti', 'Dewi', 'Andi', 'Sari', 'Joko', 'Rina',
             'Agus', 'Lina', 'Hendra', 'Maya', 'Dedi', 'Fitri', 'Rudi', 'Indah',
-            'Bambang', 'Yanti', 'Eko', 'Wati', 'Sutrisno', 'Endang', 'Wahyu', 'Sinta'
+            'Bambang', 'Yanti', 'Eko', 'Wati', 'Sutrisno', 'Endang', 'Wahyu', 'Sinta',
+            'Usman', 'Fatimah', 'Hasan', 'Khadijah', 'Ali', 'Aminah', 'Ibrahim', 'Zainab'
         ];
         
         $namaBelakang = [
             'Santoso', 'Wijaya', 'Sari', 'Pratama', 'Kusuma', 'Handoko', 'Lestari',
-            'Permana', 'Suharto', 'Rahayu', 'Setiawan', 'Maharani', 'Gunawan', 'Safitri'
+            'Permana', 'Suharto', 'Rahayu', 'Setiawan', 'Maharani', 'Gunawan', 'Safitri',
+            'Rahman', 'Yusuf', 'Hassan', 'Abdullah', 'Ismail', 'Umar'
         ];
         
         return $faker->randomElement($namaDepan) . ' ' . $faker->randomElement($namaBelakang);
     }
     
-    private function generateKalimantanBaratCoordinates($faker)
+    private function generateKalimantanBaratCoordinates($village, $faker)
     {
-        // Koordinat untuk Kalimantan Barat
-        // Pontianak: -0.0263, 109.3425
-        // Singkawang: 0.9063, 108.9896
-        // Sambas: 1.3735, 109.3074
+        // ✅ PERBAIKAN: Koordinat akurat berdasarkan regency di Kalimantan Barat
+        $regencyCoords = $this->getRegencyCoordinates($village->district->regency->name);
+        
+        // Variasi kecil dari center regency (radius ~2km)
+        $latVariation = $faker->randomFloat(6, -0.02, 0.02);
+        $lngVariation = $faker->randomFloat(6, -0.02, 0.02);
         
         return [
-            'lat' => $faker->randomFloat(6, -1.5, 2.0), // Range latitude Kalimantan Barat
-            'lng' => $faker->randomFloat(6, 108.0, 111.0) // Range longitude Kalimantan Barat
+            'lat' => $regencyCoords['lat'] + $latVariation,
+            'lng' => $regencyCoords['lng'] + $lngVariation
         ];
+    }
+    
+    private function getRegencyCoordinates($regencyName)
+    {
+        // Koordinat akurat untuk setiap kabupaten/kota di Kalimantan Barat
+        $coordinates = [
+            // Kota
+            'KOTA PONTIANAK' => ['lat' => -0.02055556, 'lng' => 109.34138889],
+            'KOTA SINGKAWANG' => ['lat' => 0.9, 'lng' => 108.98333333],
+            
+            // Kabupaten
+            'KABUPATEN SAMBAS' => ['lat' => 1.43333, 'lng' => 109.35],
+            'KABUPATEN BENGKAYANG' => ['lat' => 1.06911, 'lng' => 109.66393],
+            'KABUPATEN LANDAK' => ['lat' => 0.42373, 'lng' => 109.75917],
+            'KABUPATEN MEMPAWAH' => ['lat' => 0.25, 'lng' => 109.16667],
+            'KABUPATEN SANGGAU' => ['lat' => 0.11944444, 'lng' => 110.58888889],
+            'KABUPATEN KETAPANG' => ['lat' => -1.85, 'lng' => 109.98333],
+            'KABUPATEN SINTANG' => ['lat' => 0.06805556, 'lng' => 111.49805556],
+            'KABUPATEN KAPUAS HULU' => ['lat' => 0.83333, 'lng' => 112.8],
+            'KABUPATEN SEKADAU' => ['lat' => 0.03485, 'lng' => 110.95066],
+            'KABUPATEN MELAWI' => ['lat' => -0.33617, 'lng' => 111.698],
+            'KABUPATEN KAYONG UTARA' => ['lat' => -1.06023, 'lng' => 110.10402],
+            'KABUPATEN KUBU RAYA' => ['lat' => -0.31924, 'lng' => 109.51865],
+        ];
+        
+        // Return koordinat atau default ke Pontianak jika tidak ditemukan
+        return $coordinates[$regencyName] ?? ['lat' => -0.02055556, 'lng' => 109.34138889];
     }
     
     private function generatePenghasilanKalbar($faker)
@@ -232,7 +264,8 @@ class SurveyKalimantanBaratSeeder extends Seeder
         $jalanNames = [
             'Merdeka', 'Sudirman', 'Diponegoro', 'Gajah Mada', 'Ahmad Yani',
             'Veteran', 'Pahlawan', 'Sungai Kapuas', 'Equator', 'Tanjungpura',
-            'Pontianak', 'Singkawang', 'Sambas', 'Ketapang', 'Sintang'
+            'Pontianak', 'Singkawang', 'Sambas', 'Ketapang', 'Sintang',
+            'Dayak', 'Melayu', 'Khatulistiwa', 'Borneo', 'Kalimantan'
         ];
         
         $jalan = $faker->randomElement($jalanTypes) . ' ' . $faker->randomElement($jalanNames);

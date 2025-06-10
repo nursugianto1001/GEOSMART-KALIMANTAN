@@ -1,4 +1,4 @@
-{{-- resources/views/admin/surveys/show.blade.php --}}
+{{-- resources/views/admin/surveys/detail.blade.php --}}
 <x-layouts.admin>
     <x-slot name="header">
         <div class="flex items-center space-x-4">

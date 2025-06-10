@@ -30,7 +30,7 @@
                                 <input type="checkbox" id="show-work-area" class="mr-2 rounded border-green-300 text-green-600 shadow-sm focus:border-green-300 focus:ring focus:ring-green-200 focus:ring-opacity-50">
                                 <label for="show-work-area" class="text-sm font-medium text-green-700">Wilayah Kerja</label>
                             </div>
-                            
+
                             <!-- Filter by Status -->
                             <div class="flex items-center ml-4">
                                 <label for="status-filter" class="text-sm font-medium text-green-700 mr-2">Filter Status:</label>
@@ -70,7 +70,7 @@
                                     </div>
                                     <div class="flex items-center">
                                         <div class="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
-                                        <span class="text-green-700">Tidak Miskin (<10)</span>
+                                        <span class="text-green-700">Tidak Miskin (<10)< /span>
                                     </div>
                                 </div>
                             </div>
@@ -166,217 +166,345 @@
         </div>
     </div>
 
-    @push('scripts')
-    <script>
-        // Initialize map
-        const map = L.map('map').setView([-6.2088, 106.8456], 10);
+@push('scripts')
+<script>
+    // Initialize map
+    const map = L.map('map').setView([-0.0263, 109.3425], 9); // ✅ Center ke Kalimantan Barat
 
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-        // Layer groups
-        const surveysLayer = L.layerGroup().addTo(map);
-        const facilitiesLayer = L.layerGroup();
-        const roadsLayer = L.layerGroup();
-        const workAreaLayer = L.layerGroup();
+    setTimeout(function() {
+        map.invalidateSize();
+    }, 100);
 
-        // Survey data
-        const allSurveys = {!! json_encode($surveys->map(function($survey) {
-            return [
-                'id' => $survey->id,
-                'name' => $survey->nama_kepala_keluarga,
-                'latitude' => (float) $survey->latitude,
-                'longitude' => (float) $survey->longitude,
-                'address' => $survey->alamat_lengkap,
-                'village' => $survey->neighborhood->village->name,
-                'poverty_level' => $survey->poverty_level ?? 'Tidak Diketahui',
-                'poverty_score' => $survey->poverty_score ?? 0,
-                'members' => $survey->jumlah_anggota_keluarga,
-                'status' => $survey->status_verifikasi,
-                'status_text' => $survey->status_text,
-                'created_at' => $survey->created_at->format('d/m/Y'),
-                'economic_status' => $survey->sumber_penghasilan,
-                'house_condition' => $survey->jenis_bangunan
-            ];
-        })) !!};
+    // Layer groups
+    const surveysLayer = L.layerGroup().addTo(map);
+    const facilitiesLayer = L.layerGroup();
+    const roadsLayer = L.layerGroup();
+    const workAreaLayer = L.layerGroup();
 
-        // Work area data
-        const workAreas = {!! json_encode($workAreaVillages->map(function($village) {
-            return [
-                'name' => $village->name,
-                'district' => $village->district->name
-            ];
-        })) !!};
+    // ✅ PERBAIKAN: Hapus spasi di arrow operator
+    const allSurveys = {!! json_encode($surveys->map(function($survey) {
+        return [
+            'id' => $survey->id,
+            'name' => $survey->nama_kepala_keluarga,
+            'latitude' => (float) $survey->latitude,
+            'longitude' => (float) $survey->longitude,
+            'address' => $survey->alamat_lengkap,
+            'village' => $survey->neighborhood->village->name ?? 'N/A',
+            'poverty_level' => $survey->poverty_level ?? 'Tidak Diketahui',
+            'poverty_score' => $survey->poverty_score ?? 0,
+            'members' => $survey->jumlah_anggota_keluarga,
+            'status' => $survey->status_verifikasi,
+            'created_at' => $survey->created_at->format('d/m/Y'),
+            'economic_status' => $survey->sumber_penghasilan ?? 'N/A',
+            'house_condition' => $survey->jenis_bangunan ?? 'N/A'
+        ];
+    })) !!};
 
-        let currentSurveys = allSurveys || [];
+    const publicFacilities = {!! json_encode($publicFacilities->map(function($facility) {
+        return [
+            'id' => $facility->id,
+            'name' => $facility->name,
+            'type' => $facility->type,
+            'latitude' => (float) $facility->latitude,
+            'longitude' => (float) $facility->longitude,
+            'condition' => $facility->kondisi,
+            'village' => $facility->village->name ?? 'N/A',
+            'address' => $facility->alamat ?? ''
+        ];
+    })) !!};
 
-        // Load surveys on map
-        function loadSurveys(surveys = currentSurveys) {
-            surveysLayer.clearLayers();
-            
-            if (!Array.isArray(surveys)) {
-                console.error('Surveys is not an array:', surveys);
+    const mainRoads = {!! json_encode($mainRoads->map(function($road) {
+        return [
+            'id' => $road->id,
+            'name' => $road->name,
+            'condition' => $road->kondisi_jalan,
+            'type' => $road->jenis_jalan,
+            'coordinates' => $road->coordinates,
+            'village' => $road->village->name ?? 'N/A',
+            'width' => $road->lebar_jalan
+        ];
+    })) !!};
+
+    // Work area data
+    const workAreas = {!! json_encode($workAreaVillages->map(function($village) {
+        return [
+            'name' => $village->name,
+            'district' => $village->district->name
+        ];
+    })) !!};
+
+    let currentSurveys = allSurveys || [];
+
+    // ✅ Debug console
+    console.log('Map initialized at Kalimantan Barat');
+    console.log('Surveys data:', allSurveys);
+    console.log('Public facilities:', publicFacilities);
+    console.log('Main roads:', mainRoads);
+
+    // Load surveys on map
+    function loadSurveys(surveys = currentSurveys) {
+        surveysLayer.clearLayers();
+
+        if (!Array.isArray(surveys)) {
+            console.error('Surveys is not an array:', surveys);
+            return;
+        }
+
+        surveys.forEach(survey => {
+            if (!survey.latitude || !survey.longitude) {
+                console.warn('Survey missing coordinates:', survey);
                 return;
             }
-            
-            surveys.forEach(survey => {
-                if (!survey.latitude || !survey.longitude) {
-                    console.warn('Survey missing coordinates:', survey);
+
+            const povertyColor = getPovertyColor(survey.poverty_level);
+            const statusStyle = getStatusStyle(survey.status);
+
+            const marker = L.circleMarker([survey.latitude, survey.longitude], {
+                color: statusStyle.color,
+                fillColor: povertyColor,
+                fillOpacity: statusStyle.fillOpacity,
+                radius: 8,
+                weight: statusStyle.weight
+            });
+
+            const popupContent = `
+                <div class="p-3 min-w-64">
+                    <h4 class="font-bold text-green-900 mb-2">${survey.name}</h4>
+                    <div class="space-y-1 text-sm">
+                        <div><strong class="text-green-700">Alamat:</strong> <span class="text-green-900">${survey.address}</span></div>
+                        <div><strong class="text-green-700">Desa:</strong> <span class="text-green-900">${survey.village}</span></div>
+                        <div><strong class="text-green-700">Anggota:</strong> <span class="text-green-900">${survey.members} orang</span></div>
+                        <div><strong class="text-green-700">Penghasilan:</strong> <span class="text-green-900">${survey.economic_status.replace('_', ' ')}</span></div>
+                        <div><strong class="text-green-700">Kondisi Rumah:</strong> <span class="text-green-900">${survey.house_condition.replace('_', ' ')}</span></div>
+                        <div><strong class="text-green-700">Status:</strong> 
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(survey.status)}">
+                                ${survey.status}
+                            </span>
+                        </div>
+                        <div><strong class="text-green-700">Kategori:</strong> 
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${getPovertyBadgeClass(survey.poverty_level)}">
+                                ${survey.poverty_level}
+                            </span>
+                        </div>
+                        <div><strong class="text-green-700">Skor:</strong> <span class="text-green-900">${survey.poverty_score}/25</span></div>
+                        <div><strong class="text-green-700">Tanggal:</strong> <span class="text-green-900">${survey.created_at}</span></div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-green-200">
+                        <a href="/petugas/surveys/${survey.id}" 
+                           style="display: block; width: 100%; background: linear-gradient(to right, #16a34a, #15803d); color: #ffffff !important; text-align: center; padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: 500; text-decoration: none; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
+                           onmouseover="this.style.background='linear-gradient(to right, #15803d, #166534)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'"
+                           onmouseout="this.style.background='linear-gradient(to right, #16a34a, #15803d)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
+                            Lihat Detail
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+            surveysLayer.addLayer(marker);
+        });
+
+        updateStatistics(surveys);
+    }
+
+    // Load public facilities
+    function loadPublicFacilities() {
+        facilitiesLayer.clearLayers();
+
+        if (!Array.isArray(publicFacilities)) {
+            console.warn('Public facilities data not available');
+            return;
+        }
+
+        publicFacilities.forEach(facility => {
+            if (!facility.latitude || !facility.longitude) {
+                console.warn('Facility missing coordinates:', facility);
+                return;
+            }
+
+            const marker = L.marker([facility.latitude, facility.longitude], {
+                icon: L.divIcon({
+                    className: 'facility-marker',
+                    html: getFacilityIcon(facility.type),
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                })
+            });
+
+            const popupContent = `
+                <div class="p-3 min-w-48">
+                    <h4 class="font-bold text-green-900 mb-2">${facility.name}</h4>
+                    <div class="space-y-1 text-sm">
+                        <div><strong class="text-green-700">Jenis:</strong> <span class="text-green-900">${facility.type.replace('_', ' ')}</span></div>
+                        <div><strong class="text-green-700">Desa:</strong> <span class="text-green-900">${facility.village}</span></div>
+                        <div><strong class="text-green-700">Kondisi:</strong> 
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${facility.condition === 'baik' ? 'bg-green-100 text-green-800' : facility.condition === 'sedang' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}">
+                                ${facility.condition}
+                            </span>
+                        </div>
+                        ${facility.address ? `<div><strong class="text-green-700">Alamat:</strong> <span class="text-green-900">${facility.address}</span></div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+            facilitiesLayer.addLayer(marker);
+        });
+    }
+
+    // Load main roads
+    function loadMainRoads() {
+        roadsLayer.clearLayers();
+
+        if (!Array.isArray(mainRoads)) {
+            console.warn('Main roads data not available');
+            return;
+        }
+
+        mainRoads.forEach(road => {
+            if (!road.coordinates) {
+                console.warn('Road missing coordinates:', road);
+                return;
+            }
+
+            try {
+                const coordinates = typeof road.coordinates === 'string' ?
+                    JSON.parse(road.coordinates) :
+                    road.coordinates;
+
+                if (!Array.isArray(coordinates) || coordinates.length < 2) {
+                    console.warn('Invalid road coordinates:', road);
                     return;
                 }
-                
-                const povertyColor = getPovertyColor(survey.poverty_level);
-                const statusStyle = getStatusStyle(survey.status);
-                
-                const marker = L.circleMarker([survey.latitude, survey.longitude], {
-                    color: statusStyle.color,
-                    fillColor: povertyColor,
-                    fillOpacity: statusStyle.fillOpacity,
-                    radius: 8,
-                    weight: statusStyle.weight
+
+                const polyline = L.polyline(coordinates, {
+                    color: getRoadColor(road.condition),
+                    weight: 4,
+                    opacity: 0.8
                 });
 
                 const popupContent = `
-                    <div class="p-3 min-w-64">
-                        <h4 class="font-bold text-green-900 mb-2">${survey.name}</h4>
+                    <div class="p-3 min-w-48">
+                        <h4 class="font-bold text-green-900 mb-2">${road.name}</h4>
                         <div class="space-y-1 text-sm">
-                            <div><strong class="text-green-700">Alamat:</strong> <span class="text-green-900">${survey.address}</span></div>
-                            <div><strong class="text-green-700">Desa:</strong> <span class="text-green-900">${survey.village}</span></div>
-                            <div><strong class="text-green-700">Anggota:</strong> <span class="text-green-900">${survey.members} orang</span></div>
-                            <div><strong class="text-green-700">Penghasilan:</strong> <span class="text-green-900">${survey.economic_status.replace('_', ' ')}</span></div>
-                            <div><strong class="text-green-700">Kondisi Rumah:</strong> <span class="text-green-900">${survey.house_condition.replace('_', ' ')}</span></div>
-                            <div><strong class="text-green-700">Status:</strong> 
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(survey.status)}">
-                                    ${survey.status_text}
+                            <div><strong class="text-green-700">Jenis:</strong> <span class="text-green-900">${road.type.replace('_', ' ')}</span></div>
+                            <div><strong class="text-green-700">Kondisi:</strong> 
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full ${road.condition === 'baik' ? 'bg-green-100 text-green-800' : road.condition === 'sedang' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}">
+                                    ${road.condition}
                                 </span>
                             </div>
-                            <div><strong class="text-green-700">Kategori:</strong> 
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full ${getPovertyBadgeClass(survey.poverty_level)}">
-                                    ${survey.poverty_level}
-                                </span>
-                            </div>
-                            <div><strong class="text-green-700">Skor:</strong> <span class="text-green-900">${survey.poverty_score}/25</span></div>
-                            <div><strong class="text-green-700">Tanggal:</strong> <span class="text-green-900">${survey.created_at}</span></div>
-                        </div>
-                        <div class="mt-3 pt-3 border-t border-green-200">
-                            <a href="/petugas/surveys/${survey.id}" 
-                               style="display: block; width: 100%; background: linear-gradient(to right, #16a34a, #15803d); color: #ffffff !important; text-align: center; padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: 500; text-decoration: none; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
-                               onmouseover="this.style.background='linear-gradient(to right, #15803d, #166534)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'"
-                               onmouseout="this.style.background='linear-gradient(to right, #16a34a, #15803d)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
-                                Lihat Detail
-                            </a>
+                            <div><strong class="text-green-700">Desa:</strong> <span class="text-green-900">${road.village}</span></div>
+                            ${road.width ? `<div><strong class="text-green-700">Lebar:</strong> <span class="text-green-900">${road.width}m</span></div>` : ''}
                         </div>
                     </div>
                 `;
-                
-                marker.bindPopup(popupContent);
-                surveysLayer.addLayer(marker);
-            });
 
-            // Update statistics
-            updateStatistics(surveys);
-        }
-
-        // Load public facilities
-        function loadPublicFacilities() {
-            console.log('Public facilities loading...');
-        }
-
-        // Load main roads
-        function loadMainRoads() {
-            console.log('Main roads loading...');
-        }
-
-        // Helper functions
-        function getPovertyColor(level) {
-            switch(level) {
-                case 'Sangat Miskin': return '#EF4444';
-                case 'Miskin': return '#F97316';
-                case 'Rentan Miskin': return '#EAB308';
-                case 'Tidak Miskin': return '#22C55E';
-                default: return '#6B7280';
+                polyline.bindPopup(popupContent);
+                roadsLayer.addLayer(polyline);
+            } catch (error) {
+                console.error('Error processing road coordinates:', error, road);
             }
-        }
+        });
+    }
 
-        function getStatusStyle(status) {
-            switch(status) {
-                case 'draft': 
-                    return { color: '#6B7280', weight: 2, fillOpacity: 0.5 };
-                case 'submitted': 
-                    return { color: '#F59E0B', weight: 3, fillOpacity: 0.6 };
-                case 'verified': 
-                    return { color: '#10B981', weight: 2, fillOpacity: 0.8 };
-                case 'rejected': 
-                    return { color: '#EF4444', weight: 3, fillOpacity: 0.4 };
-                default: 
-                    return { color: '#6B7280', weight: 2, fillOpacity: 0.5 };
-            }
+    // Helper functions
+    function getPovertyColor(level) {
+        switch (level) {
+            case 'Sangat Miskin': return '#EF4444';
+            case 'Miskin': return '#F97316';
+            case 'Rentan Miskin': return '#EAB308';
+            case 'Tidak Miskin': return '#22C55E';
+            default: return '#6B7280';
         }
+    }
 
-        function getPovertyBadgeClass(level) {
-            switch(level) {
-                case 'Sangat Miskin': return 'bg-red-100 text-red-800';
-                case 'Miskin': return 'bg-orange-100 text-orange-800';
-                case 'Rentan Miskin': return 'bg-yellow-100 text-yellow-800';
-                case 'Tidak Miskin': return 'bg-green-100 text-green-800';
-                default: return 'bg-gray-100 text-gray-800';
-            }
+    function getStatusStyle(status) {
+        switch (status) {
+            case 'draft': return { color: '#6B7280', weight: 2, fillOpacity: 0.5 };
+            case 'submitted': return { color: '#F59E0B', weight: 3, fillOpacity: 0.6 };
+            case 'verified': return { color: '#10B981', weight: 2, fillOpacity: 0.8 };
+            case 'rejected': return { color: '#EF4444', weight: 3, fillOpacity: 0.4 };
+            default: return { color: '#6B7280', weight: 2, fillOpacity: 0.5 };
         }
+    }
 
-        function getStatusBadgeClass(status) {
-            switch(status) {
-                case 'draft': return 'bg-gray-100 text-gray-800';
-                case 'submitted': return 'bg-yellow-100 text-yellow-800';
-                case 'verified': return 'bg-green-100 text-green-800';
-                case 'rejected': return 'bg-red-100 text-red-800';
-                default: return 'bg-gray-100 text-gray-800';
-            }
+    function getPovertyBadgeClass(level) {
+        switch (level) {
+            case 'Sangat Miskin': return 'bg-red-100 text-red-800';
+            case 'Miskin': return 'bg-orange-100 text-orange-800';
+            case 'Rentan Miskin': return 'bg-yellow-100 text-yellow-800';
+            case 'Tidak Miskin': return 'bg-green-100 text-green-800';
+            default: return 'bg-gray-100 text-gray-800';
         }
+    }
 
-        function getFacilityIcon(type) {
-            const icons = {
-                'sekolah': '🏫',
-                'puskesmas': '🏥',
-                'rumah_sakit': '🏥',
-                'kantor_desa': '🏢',
-                'pasar': '🏪',
-                'masjid': '🕌',
-                'gereja': '⛪',
-                'lainnya': '📍'
-            };
-            return `<div style="background: white; border-radius: 50%; padding: 4px; font-size: 18px; border: 2px solid #16a34a; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">${icons[type] || icons['lainnya']}</div>`;
+    function getStatusBadgeClass(status) {
+        switch (status) {
+            case 'draft': return 'bg-gray-100 text-gray-800';
+            case 'submitted': return 'bg-yellow-100 text-yellow-800';
+            case 'verified': return 'bg-green-100 text-green-800';
+            case 'rejected': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
         }
+    }
 
-        function getRoadColor(condition) {
-            switch(condition) {
-                case 'baik': return '#10B981';
-                case 'sedang': return '#F59E0B';
-                case 'rusak': return '#EF4444';
-                default: return '#6B7280';
-            }
+    function getFacilityIcon(type) {
+        const icons = {
+            'sekolah': '🏫',
+            'puskesmas': '🏥',
+            'rumah_sakit': '🏥',
+            'kantor_desa': '🏢',
+            'pasar': '🏪',
+            'masjid': '🕌',
+            'gereja': '⛪',
+            'lainnya': '📍'
+        };
+        return `<div style="background: white; border-radius: 50%; padding: 4px; font-size: 18px; border: 2px solid #16a34a; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">${icons[type] || icons['lainnya']}</div>`;
+    }
+
+    function getRoadColor(condition) {
+        switch (condition) {
+            case 'baik': return '#10B981';
+            case 'sedang': return '#F59E0B';
+            case 'rusak': return '#EF4444';
+            default: return '#6B7280';
         }
+    }
 
-        function updateStatistics(surveys) {
-            if (!Array.isArray(surveys)) return;
-            
-            document.getElementById('total-surveys').textContent = surveys.length;
-            document.getElementById('sangat-miskin-count').textContent = surveys.filter(s => s.poverty_level === 'Sangat Miskin').length;
-            document.getElementById('miskin-count').textContent = surveys.filter(s => s.poverty_level === 'Miskin').length;
-            document.getElementById('rentan-miskin-count').textContent = surveys.filter(s => s.poverty_level === 'Rentan Miskin').length;
-        }
+    function updateStatistics(surveys) {
+        if (!Array.isArray(surveys)) return;
 
-        // Event listeners for toggles
-        document.getElementById('show-my-surveys').addEventListener('change', function() {
+        const totalElement = document.getElementById('total-surveys');
+        const sangat = document.getElementById('sangat-miskin-count');
+        const miskin = document.getElementById('miskin-count');
+        const rentan = document.getElementById('rentan-miskin-count');
+
+        if (totalElement) totalElement.textContent = surveys.length;
+        if (sangat) sangat.textContent = surveys.filter(s => s.poverty_level === 'Sangat Miskin').length;
+        if (miskin) miskin.textContent = surveys.filter(s => s.poverty_level === 'Miskin').length;
+        if (rentan) rentan.textContent = surveys.filter(s => s.poverty_level === 'Rentan Miskin').length;
+    }
+
+    // Event listeners for toggles
+    const showSurveys = document.getElementById('show-my-surveys');
+    if (showSurveys) {
+        showSurveys.addEventListener('change', function() {
             if (this.checked) {
                 map.addLayer(surveysLayer);
             } else {
                 map.removeLayer(surveysLayer);
             }
         });
+    }
 
-        document.getElementById('show-public-facilities').addEventListener('change', function() {
+    const showFacilities = document.getElementById('show-public-facilities');
+    if (showFacilities) {
+        showFacilities.addEventListener('change', function() {
             if (this.checked) {
                 map.addLayer(facilitiesLayer);
                 loadPublicFacilities();
@@ -384,8 +512,11 @@
                 map.removeLayer(facilitiesLayer);
             }
         });
+    }
 
-        document.getElementById('show-main-roads').addEventListener('change', function() {
+    const showRoads = document.getElementById('show-main-roads');
+    if (showRoads) {
+        showRoads.addEventListener('change', function() {
             if (this.checked) {
                 map.addLayer(roadsLayer);
                 loadMainRoads();
@@ -393,81 +524,39 @@
                 map.removeLayer(roadsLayer);
             }
         });
+    }
 
-        document.getElementById('show-work-area').addEventListener('change', function() {
-            if (this.checked) {
-                map.addLayer(workAreaLayer);
-                if (Array.isArray(workAreas)) {
-                    workAreas.forEach((area, index) => {
-                        const lat = -6.2 + (index * 0.05) + Math.random() * 0.1;
-                        const lng = 106.8 + (index * 0.05) + Math.random() * 0.1;
-                        
-                        L.marker([lat, lng], {
-                            icon: L.divIcon({
-                                className: 'work-area-marker',
-                                html: `<div style="background: linear-gradient(to right, #16a34a, #15803d); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${area.name}</div>`,
-                                iconSize: [100, 30],
-                                iconAnchor: [50, 15]
-                            })
-                        }).bindPopup(`<strong class="text-green-800">Wilayah Kerja</strong><br><span class="text-green-700">${area.name}</span><br><span class="text-green-600">${area.district}</span>`)
-                         .addTo(workAreaLayer);
-                    });
-                }
-            } else {
-                map.removeLayer(workAreaLayer);
-                workAreaLayer.clearLayers();
-            }
-        });
-
-        // Status filter
-        document.getElementById('status-filter').addEventListener('change', function() {
+    const statusFilter = document.getElementById('status-filter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
             const selectedStatus = this.value;
-            
+
             if (selectedStatus === '') {
                 currentSurveys = allSurveys;
             } else {
                 currentSurveys = allSurveys.filter(survey => survey.status === selectedStatus);
             }
-            
+
             loadSurveys(currentSurveys);
         });
+    }
 
-        // Initial load
-        loadSurveys();
+    // Initial load
+    loadSurveys();
 
-        // Center map on user's surveys if available
-        if (allSurveys && allSurveys.length > 0) {
+    // Center map on user's surveys if available
+    if (allSurveys && allSurveys.length > 0) {
+        setTimeout(() => {
             const group = new L.featureGroup(surveysLayer.getLayers());
             if (group.getLayers().length > 0) {
                 map.fitBounds(group.getBounds().pad(0.1));
             }
-        }
+        }, 500);
+    }
 
-        // Get user location and add marker
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                
-                L.marker([lat, lng], {
-                    icon: L.divIcon({
-                        className: 'user-location',
-                        html: '<div style="background: linear-gradient(to right, #16a34a, #15803d); border-radius: 50%; width: 16px; height: 16px; border: 3px solid white; box-shadow: 0 0 10px rgba(22, 163, 74, 0.5);"></div>',
-                        iconSize: [16, 16],
-                        iconAnchor: [8, 8]
-                    })
-                }).addTo(map).bindPopup('<strong class="text-green-800">Lokasi Anda</strong>');
-                
-                if (!allSurveys || allSurveys.length === 0) {
-                    map.setView([lat, lng], 13);
-                }
-            }, function(error) {
-                console.log('Geolocation error:', error.message);
-            });
-        }
+    // Add scale control
+    L.control.scale().addTo(map);
+</script>
+@endpush
 
-        // Add scale control
-        L.control.scale().addTo(map);
-    </script>
-    @endpush
 </x-layouts.petugas>

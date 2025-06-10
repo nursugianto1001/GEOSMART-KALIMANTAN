@@ -231,7 +231,7 @@
                                 {{ $family->created_at->format('d/m/Y') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('petugas.surveys.show', $family) }}" class="text-green-600 hover:text-green-800 bg-green-100 hover:bg-green-200 px-3 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md">
+                                <a href="{{ route('admin.surveys.show', $family) }}" class="text-green-600 hover:text-green-800 bg-green-100 hover:bg-green-200 px-3 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md">
                                     Detail
                                 </a>
                             </td>

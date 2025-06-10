@@ -13,6 +13,8 @@ class DatabaseSeeder extends Seeder
             IndonesiaLocationSeeder::class,
             AdminAndPetugasSeeder::class,
             SurveyKalimantanBaratSeeder::class,
+            MainRoadsSeeder::class,
+            PublicFacilitiesSeeder::class,
         ]);
     }
 }
