@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Petugas\SurveyController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminMapController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -56,6 +57,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/surveys/{survey}', [AdminDashboardController::class, 'showSurvey'])->name('surveys.show');
     Route::post('/surveys/{survey}/verify', [AdminDashboardController::class, 'verifySurvey'])->name('surveys.verify');
     Route::post('/surveys/{survey}/reject', [AdminDashboardController::class, 'rejectSurvey'])->name('surveys.reject');
+    Route::get('/maps', [AdminMapController::class, 'index'])->name('maps');
 
     // Bulk actions for surveys
     Route::post('/surveys/bulk-verify', [AdminDashboardController::class, 'bulkVerify'])->name('surveys.bulk-verify');
