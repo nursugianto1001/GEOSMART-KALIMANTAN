@@ -409,7 +409,14 @@
                     Bergabunglah dalam Misi Pengentasan Kemiskinan di Kalimantan
                 </h2>
                 <p class="text-xl text-green-700 mb-10 leading-relaxed">
-                    Dengan teknologi geospasial terdepan, mari bersama-sama membangun Kalimantan yang lebih sejahtera melalui data yang akurat dan actionable insights.
+                    Dengan teknologi geospasial terdepan, mari bersama-sama membangun Kalimantan yang lebih sejahtera melalui data yang akurat dan actionable insights.<br>
+                    <strong>Tim Pengembang:</strong><br>
+                    Grace Mary Rose H1101231006<br>
+                    Dina Aprilia Sari H1101231018<br>
+                    Chika Yunita Bahri H1101231020<br>
+                    Weny Nur Fazira H1101231044<br>
+                    Nur Sugianto H1101231053<br>
+
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     @auth
