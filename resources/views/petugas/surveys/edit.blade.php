@@ -668,7 +668,7 @@ use Illuminate\Support\Facades\Storage;
             villageSelect.disabled = true;
 
             if (provinceId && provinceId !== '' && !isNaN(provinceId)) {
-                fetch(`{{ route('petugas.api.regencies', '') }}/${provinceId}`)
+                fetch(`/petugas/api/regencies/${provinceId}`)
                     .then(response => response.json())
                     .then(data => {
                         data.forEach(regency => {
@@ -705,7 +705,7 @@ use Illuminate\Support\Facades\Storage;
             villageSelect.disabled = true;
 
             if (regencyId && regencyId !== '' && !isNaN(regencyId)) {
-                fetch(`{{ route('petugas.api.districts', '') }}/${regencyId}`)
+                fetch(`/petugas/api/districts/${regencyId}`)
                     .then(response => response.json())
                     .then(data => {
                         data.forEach(district => {
@@ -738,7 +738,7 @@ use Illuminate\Support\Facades\Storage;
             villageSelect.disabled = true;
 
             if (districtId && districtId !== '' && !isNaN(districtId)) {
-                fetch(`{{ route('petugas.api.villages', '') }}/${districtId}`)
+                fetch(`/petugas/api/villages/${districtId}`)
                     .then(response => response.json())
                     .then(data => {
                         data.forEach(village => {
@@ -957,7 +957,7 @@ use Illuminate\Support\Facades\Storage;
         }
 
         // Enable auto-save for draft surveys
-        @if($survey - > status_verifikasi === 'draft')
+        @if($survey -> status_verifikasi === 'draft')
         document.addEventListener('input', autoSaveDraft);
         document.addEventListener('change', autoSaveDraft);
         @endif
@@ -994,7 +994,7 @@ use Illuminate\Support\Facades\Storage;
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
-                @if(in_array($survey - > status_verifikasi, ['draft', 'rejected']))
+                @if(in_array($survey -> status_verifikasi, ['draft', 'rejected']))
                 const draftButton = document.querySelector('button[name="draft"]');
                 if (draftButton) draftButton.click();
                 @else
@@ -1005,7 +1005,7 @@ use Illuminate\Support\Facades\Storage;
 
             if (e.ctrlKey && e.key === 'Enter') {
                 e.preventDefault();
-                @if(in_array($survey - > status_verifikasi, ['draft', 'rejected']))
+                @if(in_array($survey -> status_verifikasi, ['draft', 'rejected']))
                 const submitButton = document.querySelector('button[name="submit"]');
                 if (submitButton) submitButton.click();
                 @endif
