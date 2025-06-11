@@ -117,9 +117,6 @@
                                 Kontak
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
-                                Wilayah Kerja
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
                                 Status
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
@@ -159,11 +156,6 @@
                                 <div class="text-sm text-green-900">{{ $user->email }}</div>
                                 <div class="text-sm text-green-600">{{ $user->phone }}</div>
                             </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm text-green-900">
-                                    {{ $user->wilayah_kerja_text }}
-                                </div>
-                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($user->is_active)
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
@@ -192,12 +184,20 @@
                                     <a href="{{ route('admin.users.edit', $user) }}" class="text-yellow-600 hover:text-yellow-800 bg-yellow-100 hover:bg-yellow-200 px-3 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md">
                                         Edit
                                     </a>
-                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline">
+                                    <form action="{{ route('admin.users.toggle-status', $user) }}" method="POST" class="inline">
                                         @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-800 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md" onclick="return confirm('Yakin ingin menghapus petugas ini?')">
-                                            Hapus
+                                        @method('PATCH')
+                                        @if($user->is_active)
+                                        <button type="submit" class="text-red-600 hover:text-red-800 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+                                            onclick="return confirm('Yakin ingin menonaktifkan petugas ini?')">
+                                            Nonaktifkan
                                         </button>
+                                        @else
+                                        <button type="submit" class="text-green-600 hover:text-green-800 bg-green-100 hover:bg-green-200 px-3 py-1 rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+                                            onclick="return confirm('Yakin ingin mengaktifkan petugas ini?')">
+                                            Aktifkan
+                                        </button>
+                                        @endif
                                     </form>
                                 </div>
                             </td>

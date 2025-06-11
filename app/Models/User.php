@@ -18,7 +18,6 @@ class User extends Authenticatable
         'role',
         'phone',
         'nip',
-        'wilayah_kerja',
         'is_active',
         'created_by'
     ];
@@ -33,7 +32,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'wilayah_kerja' => 'array',
             'is_active' => 'boolean',
         ];
     }
@@ -84,19 +82,5 @@ class User extends Authenticatable
     public function isPetugasLapangan()
     {
         return $this->role === 'petugas_lapangan';
-    }
-
-    // ✅ PERBAIKAN: Update method untuk menangani wilayah_kerja null
-    public function getWilayahKerjaTextAttribute()
-    {
-        // Jika wilayah_kerja null atau kosong, return "Semua Wilayah"
-        if (!$this->wilayah_kerja || !is_array($this->wilayah_kerja) || empty($this->wilayah_kerja)) {
-            return 'Semua Wilayah';
-        }
-
-        $villages = Village::whereIn('id', $this->wilayah_kerja)->with('district')->get();
-        return $villages->map(function ($village) {
-            return $village->name . ', ' . $village->district->name;
-        })->implode('; ');
     }
 }

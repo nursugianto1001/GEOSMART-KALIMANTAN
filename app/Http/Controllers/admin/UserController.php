@@ -74,8 +74,6 @@ class UserController extends Controller
                 'phone' => $request->phone,
                 'nip' => $request->nip,
                 'role' => 'petugas_lapangan',
-                // ✅ PERBAIKAN: Set wilayah_kerja sebagai null (tidak ada pembatasan)
-                'wilayah_kerja' => null,
                 'password' => Hash::make($request->password),
                 'created_by' => auth()->id(),
                 'is_active' => true,
