@@ -90,7 +90,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                         </svg>
                     </div>
-                    <span class="text-xl font-bold text-green-900">GEOSMART Kalimantan</span>
+                    <span class="text-xl font-bold text-green-900">GEOSMART</span>
                 </div>
 
                 @if (Route::has('login'))
